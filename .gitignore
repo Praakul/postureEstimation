@@ -1,0 +1,11 @@
+*.avi
+*.mp4
+*.mpeg
+*.__pycache__
+*.pt
+*.png
+*.jpeg
+openpose/
+synthDa/
+poseVideos/*
+!poseVideos/.gitkeep
