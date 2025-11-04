@@ -9,3 +9,4 @@ openpose/
 synthDa/
 poseVideos/*
 !poseVideos/.gitkeep
+__pycache__/

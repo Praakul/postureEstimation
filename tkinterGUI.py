@@ -13,26 +13,19 @@ class PoseApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # --- NEW: Font and Color Constants ---
-        self.FONT_TITLE = ("Arial", 50, "bold")
-        self.FONT_BUTTON = ("Arial", 36, "bold")
-        self.FONT_LABEL = ("Arial", 36, "bold")
-        self.FONT_OVERLAY = ("Arial", 42, "bold")
+        # --- Font and Color Constants (Using your values) ---
+        self.FONT_TITLE = ("Arial", 70, "bold")
+        self.FONT_BUTTON = ("Arial", 46, "bold")
+        self.FONT_LABEL = ("Arial", 46, "bold")
+        self.FONT_OVERLAY = ("Arial", 52, "bold")
 
-        # --- Color Palette (Dark, High-Contrast) ---
-        self.COLOR_PRIMARY = ("#00529B", "#00396D") # Dark Blue (fg, hover)
-        self.COLOR_SECONDARY = ("#505050", "#303030") # Dark Gray (fg, hover)
-        self.COLOR_SUCCESS = ("#006400", "#004D00") # Dark Green (fg, hover)
-        self.COLOR_WARNING = ("#CC5500", "#FF8C00") # Dark Orange (fg, hover)
-        self.COLOR_DANGER = ("#8B0000", "#B22222") # Dark Red (fg, hover)
+        self.COLOR_PRIMARY = ("#00529B", "#00396D") # Dark Blue
+        self.COLOR_SECONDARY = ("#505050", "#303030") # Dark Gray
+        self.COLOR_SUCCESS = ("#006400", "#004D00") # Dark Green
+        self.COLOR_WARNING = ("#CC5500", "#FF8C00") # Dark Orange
+        self.COLOR_DANGER = ("#8B0000", "#B22222") # Dark Red
         self.TEXT_COLOR = "white"
 
-        # --- Basic App Setup ---
-        self.title("Industrial Pose Analysis Dashboard")
-        self.geometry("1600x950") # Increased window size
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
-        
         # --- App State Variables ---
         self.is_analysis_running = False
         self.is_recording = False
@@ -46,8 +39,26 @@ class PoseApp(ctk.CTk):
         self.raw_frame = None
         self.bgr_annotated_frame = None 
         self.rgb_annotated_frame = None 
+        self.camera_sources = []
+        self.save_path = "" # For storing the save path
 
-        # --- Load YOLO Model ---
+        # --- Basic App Setup ---
+        self.title("Industrial Pose Analysis Dashboard")
+        self.geometry("1600x950") 
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
+        
+        # --- Load Model and Find Cameras ---
+        self.load_model()
+        self.find_cameras()
+        
+        # --- Create All UI Widgets ---
+        self.setup_ui()
+        
+        # Set protocol for window close button
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def load_model(self):
         try:
             self.model = YOLO("yolo11n-pose.pt") 
             print("YOLO model loaded successfully.")
@@ -55,14 +66,27 @@ class PoseApp(ctk.CTk):
             print(f"Error loading YOLO model: {e}")
             self.quit()
 
-        # --- Find Available Cameras ---
-        self.camera_sources = self.find_cameras()
-        if not self.camera_sources:
-            print("Error: No cameras found. Exiting.")
-            self.quit()
-        self.selected_camera = ctk.StringVar(value=self.camera_sources[0])
+    def find_cameras(self):
+        """Checks for available camera indices and populates the list."""
+        index = 0
+        arr = []
+        while index < 5: 
+            # Use cv2.CAP_DSHOW for better compatibility on Windows, if applicable
+            # For Linux, just cv2.VideoCapture(index) is fine.
+            cap = cv2.VideoCapture(index) 
+            if cap.isOpened():
+                arr.append(f"Camera {index}")
+                cap.release()
+            index += 1
+        if not arr:
+            arr.append("No Cameras Found")
+        
+        self.camera_sources = arr
 
-        # --- Configure the GUI Layout ---
+    def setup_ui(self):
+        """Creates and grids all UI elements."""
+        
+        # --- Configure the main app layout ---
         self.grid_rowconfigure(0, weight=0) # Title
         self.grid_rowconfigure(1, weight=1) # Video Feeds
         self.grid_rowconfigure(2, weight=0) # Control Bar
@@ -70,12 +94,12 @@ class PoseApp(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
 
         # --- 1. Title Header ---
-        self.title_label = ctk.CTkLabel(self, text="Industrial Pose Analysis Dashboard", 
+        self.title_label = ctk.CTkLabel(self, text="Industrial Weightlifting Pose Analysis", 
                                         font=self.FONT_TITLE, text_color="#00AEEF")
         self.title_label.grid(row=0, column=0, columnspan=2, padx=20, pady=(20, 10))
 
         # --- 2. Video Feeds ---
-        # Frame for Raw Feed
+        # Raw Feed Container
         self.raw_frame_container = ctk.CTkFrame(self)
         self.raw_frame_container.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
         self.raw_frame_container.grid_rowconfigure(0, weight=0)
@@ -84,10 +108,10 @@ class PoseApp(ctk.CTk):
         
         self.raw_title = ctk.CTkLabel(self.raw_frame_container, text="Raw Camera Feed", font=self.FONT_LABEL)
         self.raw_title.grid(row=0, column=0, padx=10, pady=10)
-        self.raw_feed_label = ctk.CTkLabel(self.raw_frame_container, text="", font=self.FONT_LABEL)
+        self.raw_feed_label = ctk.CTkLabel(self.raw_frame_container, text="Camera Off", font=self.FONT_LABEL)
         self.raw_feed_label.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        # Frame for Model Feed
+        # Model Feed Container
         self.model_frame_container = ctk.CTkFrame(self)
         self.model_frame_container.grid(row=1, column=1, padx=20, pady=10, sticky="nsew")
         self.model_frame_container.grid_rowconfigure(0, weight=0)
@@ -96,7 +120,7 @@ class PoseApp(ctk.CTk):
 
         self.model_title = ctk.CTkLabel(self.model_frame_container, text="Analyzed Feed", font=self.FONT_LABEL)
         self.model_title.grid(row=0, column=0, padx=10, pady=10)
-        self.model_feed_label = ctk.CTkLabel(self.model_frame_container, text="", font=self.FONT_LABEL)
+        self.model_feed_label = ctk.CTkLabel(self.model_frame_container, text="Analysis Off", font=self.FONT_LABEL)
         self.model_feed_label.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         
         # Pause Overlay Label
@@ -122,23 +146,35 @@ class PoseApp(ctk.CTk):
         self.cam_frame.grid(row=0, column=1, padx=10)
         self.camera_label = ctk.CTkLabel(self.cam_frame, text="Select Camera:", font=self.FONT_LABEL)
         self.camera_label.pack(side="left", padx=5)
-        self.camera_menu = ctk.CTkOptionMenu(self.cam_frame, values=self.camera_sources, 
-                                             variable=self.selected_camera, font=self.FONT_BUTTON,
+
+        self.selected_camera = ctk.StringVar(value=self.camera_sources[0])
+        self.camera_menu = ctk.CTkOptionMenu(self.cam_frame, 
+                                             values=self.camera_sources, 
+                                             variable=self.selected_camera,
+                                             # --- !!! THIS IS THE FIX !!! ---
+                                             font=self.FONT_BUTTON, # Correct param for button text
+                                             dropdown_font=self.FONT_BUTTON, # Correct for list
+                                             # --- !!! END FIX !!! ---
                                              button_color=self.COLOR_PRIMARY[0], 
                                              button_hover_color=self.COLOR_PRIMARY[1],
-                                             text_color=self.TEXT_COLOR)
+                                             text_color=self.TEXT_COLOR,
+                                             dropdown_fg_color=self.COLOR_PRIMARY[0],
+                                             dropdown_hover_color=self.COLOR_PRIMARY[1])
         self.camera_menu.pack(side="left", padx=5)
 
         # Analysis Controls
         self.analysis_frame = ctk.CTkFrame(self.control_frame, fg_color="transparent")
         self.analysis_frame.grid(row=0, column=2, padx=10)
         self.start_analysis_button = ctk.CTkButton(self.analysis_frame, text="Start Analysis", 
-                                                   command=self.start_analysis, font=self.FONT_BUTTON, height=45,
+                                                   command=self.start_analysis, font=self.FONT_BUTTON,
+                                                   # --- !!! HEIGHT REMOVED !!! ---
                                                    fg_color=self.COLOR_PRIMARY[0], hover_color=self.COLOR_PRIMARY[1],
                                                    text_color=self.TEXT_COLOR)
         self.start_analysis_button.pack(side="left", padx=5)
+        
         self.stop_analysis_button = ctk.CTkButton(self.analysis_frame, text="Stop Analysis", 
-                                                  command=self.stop_analysis, font=self.FONT_BUTTON, height=45, 
+                                                  command=self.stop_analysis, font=self.FONT_BUTTON, 
+                                                  # --- !!! HEIGHT REMOVED !!! ---
                                                   state="disabled", fg_color=self.COLOR_SECONDARY[0], 
                                                   hover_color=self.COLOR_SECONDARY[1], text_color=self.TEXT_COLOR)
         self.stop_analysis_button.pack(side="left", padx=5)
@@ -152,48 +188,34 @@ class PoseApp(ctk.CTk):
         self.record_frame.grid(row=0, column=4, padx=10)
         
         self.start_record_button = ctk.CTkButton(self.record_frame, text="Start Recording", 
-                                                 command=self.start_recording, font=self.FONT_BUTTON, height=45, 
+                                                 command=self.start_recording, font=self.FONT_BUTTON,
+                                                 # --- !!! HEIGHT REMOVED !!! ---
                                                  state="disabled", fg_color=self.COLOR_SUCCESS[0], 
                                                  hover_color=self.COLOR_SUCCESS[1], text_color=self.TEXT_COLOR)
         self.start_record_button.pack(side="left", padx=5)
         
         self.pause_record_button = ctk.CTkButton(self.record_frame, text="Pause Recording", 
-                                                 command=self.toggle_pause_recording, font=self.FONT_BUTTON, height=45, 
+                                                 command=self.toggle_pause_recording, font=self.FONT_BUTTON,
+                                                 # --- !!! HEIGHT REMOVED !!! ---
                                                  state="disabled", fg_color=self.COLOR_WARNING[0], 
                                                  hover_color=self.COLOR_WARNING[1], text_color=self.TEXT_COLOR)
         self.pause_record_button.pack(side="left", padx=5)
         
         self.stop_record_button = ctk.CTkButton(self.record_frame, text="Stop Recording", 
-                                                command=self.stop_recording, font=self.FONT_BUTTON, height=45, 
+                                                command=self.stop_recording, font=self.FONT_BUTTON,
+                                                # --- !!! HEIGHT REMOVED !!! ---
                                                 state="disabled", fg_color=self.COLOR_DANGER[0], 
                                                 hover_color=self.COLOR_DANGER[1], text_color=self.TEXT_COLOR)
         self.stop_record_button.pack(side="left", padx=5)
 
         # Quit Button
         self.quit_button = ctk.CTkButton(self.control_frame, text="Close Application", 
-                                         command=self.on_closing, font=self.FONT_BUTTON, height=45,
+                                         command=self.on_closing, font=self.FONT_BUTTON,
+                                         # --- !!! HEIGHT REMOVED !!! ---
                                          fg_color=self.COLOR_DANGER[0], hover_color=self.COLOR_DANGER[1],
                                          text_color=self.TEXT_COLOR)
         self.quit_button.grid(row=0, column=6, padx=20)
 
-        # Set protocol for window close button
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-    # --- Helper Functions ---
-
-    def find_cameras(self):
-        """Checks for available camera indices."""
-        index = 0
-        arr = []
-        while index < 5: 
-            cap = cv2.VideoCapture(index)
-            if cap.isOpened():
-                arr.append(f"Camera {index}")
-                cap.release()
-            index += 1
-        if not arr:
-            arr.append("No Cameras Found")
-        return arr
 
     def create_video_writer(self):
         """Creates a new VideoWriter object with a unique timestamp."""
@@ -224,8 +246,13 @@ class PoseApp(ctk.CTk):
         self.is_analysis_running = True
         
         try:
-            cam_index = int(self.selected_camera.get().split()[-1])
-        except ValueError:
+            cam_index_str = self.selected_camera.get().split()[-1]
+            if cam_index_str == "Found": # Handle "No Cameras Found" case
+                print("No valid camera selected.")
+                self.is_analysis_running = False
+                return
+            cam_index = int(cam_index_str)
+        except (ValueError, IndexError):
             print("No valid camera selected.")
             self.is_analysis_running = False
             return
@@ -268,8 +295,8 @@ class PoseApp(ctk.CTk):
         self.raw_frame = None
         self.bgr_annotated_frame = None
         self.rgb_annotated_frame = None
-        self.raw_feed_label.configure(image=None)
-        self.model_feed_label.configure(image=None)
+        self.raw_feed_label.configure(image=None, text="Camera Off")
+        self.model_feed_label.configure(image=None, text="Analysis Off")
 
         # Update button states
         self.start_analysis_button.configure(state="normal")
@@ -286,9 +313,9 @@ class PoseApp(ctk.CTk):
     def video_processing_loop(self):
         """The main loop for reading and processing frames. Runs in a separate thread."""
         while self.is_analysis_running:
-            if not self.cap.isOpened():
+            if not self.cap or not self.cap.isOpened():
                 print("Error: Camera disconnected.")
-                self.is_analysis_running = False # Stop the loop
+                self.is_analysis_running = False 
                 break
             
             success, frame = self.cap.read()
@@ -350,7 +377,6 @@ class PoseApp(ctk.CTk):
 
     def get_display_size(self, frame_w, frame_h, widget):
         """Calculates the new W/H to fit the widget while maintaining aspect ratio."""
-        # Get the widget's current size (minus padding)
         widget_w = widget.winfo_width() - 20  # 10px padding on each side
         widget_h = widget.winfo_height() - 20 # 10px padding on each side
         
@@ -403,7 +429,10 @@ class PoseApp(ctk.CTk):
             self.video_writer = None
             print(f"Video saved successfully to {self.save_path}")
         
-        self.start_record_button.configure(state="normal")
+        # Only re-enable start if analysis is still running
+        if self.is_analysis_running:
+            self.start_record_button.configure(state="normal")
+        
         self.pause_record_button.configure(state="disabled", text="Pause Recording")
         self.stop_record_button.configure(state="disabled")
         self.pause_label.place_forget()
@@ -411,7 +440,15 @@ class PoseApp(ctk.CTk):
     def on_closing(self):
         """Called when the window is closed."""
         print("Closing application...")
-        self.stop_analysis() 
+        self.is_analysis_running = False # Signal thread to stop
+        # Give the thread a moment to close
+        time.sleep(0.1) 
+        
+        if self.video_writer:
+            self.video_writer.release()
+        if self.cap:
+            self.cap.release()
+            
         self.destroy() 
 
 
