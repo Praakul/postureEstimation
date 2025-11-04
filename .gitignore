@@ -5,5 +5,7 @@
 *.pt
 *.png
 *.jpeg
-openpose/*
-synthDa/*
+openpose/
+synthDa/
+poseVideos/*
+!poseVideos/.gitkeep
