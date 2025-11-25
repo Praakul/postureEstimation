@@ -9,8 +9,8 @@ from utils.normalization import normalize_skeleton
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 DATA_ROOT = "Data/" 
-OUTPUT_X = "X_train.npy"
-OUTPUT_Y = "y_train.npy"
+OUTPUT_X = "trainable_data/x_train.npy"
+OUTPUT_Y = "trainable_data/y_train.npy"
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=False, model_complexity=1, min_detection_confidence=0.5)

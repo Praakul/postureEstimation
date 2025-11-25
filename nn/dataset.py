@@ -3,17 +3,17 @@ import numpy as np
 from torch.utils.data import Dataset
 
 class SkeletonDataset(Dataset):
-    def __init__(self, X_path, y_path, seq_length=50, augment=False):
+    def __init__(self, x_path, y_path, seq_length=50, augment=False):
         self.augment = augment
         self.seq_length = seq_length
-        self.X, self.y = self._process_data(X_path, y_path)
+        self.X, self.y = self._process_data(x_path, y_path)
 
-    def _process_data(self, X_path, y_path):
+    def _process_data(self, x_path, y_path):
         try:
-            X = np.load(X_path)
+            X = np.load(x_path)
             y = np.load(y_path)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Data files not found at {X_path} or {y_path}")
+            raise FileNotFoundError(f"Data files not found at {x_path} or {y_path}")
 
         X_seq, y_seq = [], []
         stride = 20

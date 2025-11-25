@@ -33,7 +33,7 @@ class GraphConvolution(nn.Module):
         return x
 
 class STGCN_Block(nn.Module):
-    def __init__(self, in_channels, out_channels, A, stride=1):
+    def __init__(self, in_channels, out_channels, A, stride=1, dropout=0.0): # Added dropout arg
         super(STGCN_Block, self).__init__()
         self.gcn = GraphConvolution(in_channels, out_channels, A)
         self.tcn = nn.Sequential(
@@ -41,7 +41,7 @@ class STGCN_Block(nn.Module):
             nn.ReLU(),
             nn.Conv2d(out_channels, out_channels, kernel_size=(9, 1), padding=(4, 0), stride=(stride, 1)),
             nn.BatchNorm2d(out_channels),
-            nn.Dropout(0.2) # Dropout for regularization
+            nn.Dropout(dropout) # Use dynamic dropout
         )
         # ATTENTION UPGRADE
         self.se = SE_Block(out_channels)
@@ -53,7 +53,7 @@ class STGCN_Block(nn.Module):
         return x
 
 class STGCN(nn.Module):
-    def __init__(self, num_classes=3, in_channels=6, t_kernel_size=9, hop_size=1):
+    def __init__(self, num_classes=3, in_channels=6, t_kernel_size=9, hop_size=1, dropout=0.0): # Added dropout arg
         # Note: in_channels=6 (3 Pos + 3 Vel)
         super(STGCN, self).__init__()
         
@@ -61,12 +61,12 @@ class STGCN(nn.Module):
         self.data_bn = nn.BatchNorm1d(in_channels * 17)
         
         self.layers = nn.ModuleList([
-            STGCN_Block(in_channels, 64, self.A),
-            STGCN_Block(64, 64, self.A),
-            STGCN_Block(64, 128, self.A, stride=2),
-            STGCN_Block(128, 128, self.A),
-            STGCN_Block(128, 256, self.A, stride=2),
-            STGCN_Block(256, 256, self.A)
+            STGCN_Block(in_channels, 64, self.A, dropout=dropout),
+            STGCN_Block(64, 64, self.A, dropout=dropout),
+            STGCN_Block(64, 128, self.A, stride=2, dropout=dropout),
+            STGCN_Block(128, 128, self.A, dropout=dropout),
+            STGCN_Block(128, 256, self.A, stride=2, dropout=dropout),
+            STGCN_Block(256, 256, self.A, dropout=dropout)
         ])
         self.fc = nn.Linear(256, num_classes)
 

@@ -4,7 +4,7 @@ import torch.optim as optim
 import os
 import csv
 import time
-from utils import AverageMeter
+from utils.utils import AverageMeter
 
 class Trainer:
     def __init__(self, model, train_loader, val_loader, config, logger, device):

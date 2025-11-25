@@ -12,3 +12,4 @@ poseVideos/*
 __pycache__/
 pose-trainer/
 Data/
+runs/
