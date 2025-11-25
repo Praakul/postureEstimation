@@ -5,8 +5,10 @@
 *.pt
 *.png
 *.jpeg
-openpose/
-synthDa/
+*.zip
+
 poseVideos/*
 !poseVideos/.gitkeep
 __pycache__/
+pose-trainer/
+Data/
