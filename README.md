@@ -1,172 +1,147 @@
-# Real-Time Posture Analysis for Industrial Weightlifting
+# 🏗️ Real-Time Posture Analysis for Industrial Weightlifting
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)
 ![PyQt6](https://img.shields.io/badge/GUI-PyQt6-green?logo=qt&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/AI-PyTorch-orange?logo=pytorch&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/Vision-MediaPipe-lightgrey)
 
 > **Protecting the workforce in the era of automation.**
 
-## Overview
+## 📖 Overview
 
-In an era increasingly defined by the rise of AGI and automation, a significant portion of the global industrial sector still relies on human manpower. Manual material handling—specifically lifting heavy objects—remains a primary cause of musculoskeletal disorders (MSDs) and lifelong injuries.
+In an industrial landscape where manual material handling remains a primary cause of musculoskeletal disorders (MSDs), standard safety protocols often fail to provide immediate, actionable feedback.
 
-This project bridges the gap between **Occupational Safety** and **Computer Vision**. It is an end-to-end application that monitors workers in real-time, analyzes their lifting mechanics using bio-mechanical rules and Deep Learning, and provides instant feedback to prevent injuries before they happen.
-
----
-
-## Conceptual Architecture
-
-This system is not just a simple pose detector. It uses a **Hybrid Intelligence** approach, combining deterministic physics with probabilistic AI.
-
-### 1. The Eye: Vision & Extraction 
-We use **MediaPipe Pose** (or YOLOv11-Pose) to extract a 33-point 3D skeleton from the raw video feed.
-* **Jitter Reduction:** Raw signals are noisy. We implement a **OneEuroFilter** to smooth movements, removing high-frequency jitter while maintaining low latency for fast motions.
-
-### 2. The Bridge: Mathematical Normalization 
-A raw skeleton depends on camera distance and angle. A worker standing far away looks "smaller" than one close by.
-* **Scale Invariance:** We normalize the skeleton so the torso length is always `1.0` units.
-* **View Invariance:** We mathematically rotate the skeleton so the hips align with the camera axis.
-* **Result:** The AI model sees a standardized "canonical" body, regardless of camera placement or worker height.
-
-### 3. The Brain: ST-GCN (Spatial-Temporal Graph ConvNet) 
-Traditional AI sees a flat list of numbers. Our model uses **ST-GCN**, which understands:
-* **Spatial Structure:** It knows the wrist is connected to the elbow, not the foot.
-* **Temporal Dynamics:** It analyzes a sequence of **50 frames** (approx. 2 seconds). It differentiates between *static bending* and *dynamic lifting*.
-* **Attention:** Integrated **SE-Blocks** (Squeeze-and-Excitation) allow the model to focus on critical joints (Spine/Hips) while ignoring noise (Wrists).
-
-### 4. The Logic: Bio-Mechanical Heuristics 
-We overlay AI predictions with strict geometric rules based on **EAWS (European Assembly Worksheet)** and **NIOSH** standards:
-* **The Stoop (Danger):** Back bent (>60°) + Legs straight. High lumbar load.
-* **The Squat (Safe):** Back bent + Knees bent. Load transferred to legs.
-* **Context Awareness:** The system only alerts if the hands are below the knees (indicating a lift is happening), reducing false alarms during resting periods.
+This project implements an **Industrial IoT (IIoT) Solution** for real-time ergonomic monitoring. Unlike simple pose detectors, it uses a **Hybrid Intelligence** approach—combining deterministic bio-mechanical physics with probabilistic Deep Learning—distributed across a scalable **Edge-Cloud Architecture**.
 
 ---
 
-## Project Structure
+## 🧠 System Architecture & Logic
 
-A modular, industry-standard architecture designed for scalability.
+The system is decoupled into three distinct layers to ensure scalability, low latency, and robustness.
+
+### 1. The Edge Client (The Eye) 👁️
+Running on factory floor hardware (Laptop/NUC/Jetson).
+* **Vision:** Extracts a 33-point 3D skeleton using **MediaPipe Pose**.
+* **Signal Processing:** Raw keypoints are noisy. We apply a **OneEuroFilter** to smooth signals in real-time, removing high-frequency jitter while preserving low-latency responsiveness.
+* **Normalization Bridge:** Before data leaves the edge, it is mathematically normalized:
+    * *Scale Invariance:* Torso length scaled to 1.0 units.
+    * *View Invariance:* Skeleton rotated to align hips with the camera axis (canonical view).
+
+### 2. The Inference Server (The Brain) 🧠
+Running on a central GPU server or Cloud instance.
+* **Model:** A **Spatial-Temporal Graph Convolutional Network (ST-GCN)**.
+* **Input:** It analyzes **6 Channels** of data (X, Y, Z Position + X, Y, Z Velocity) over a **50-frame sequence**.
+* **Attention:** Integrated **SE-Blocks** (Squeeze-and-Excitation) allow the model to focus on critical load-bearing joints (Spine/Hips) while ignoring peripheral noise.
+
+### 3. The Safety Logic (The Guard) 🛡️
+A hybrid decision engine combines AI predictions with deterministic heuristics:
+* **Bio-Mechanical Heuristic:** Differentiates between a **Stoop** (Back bent + Legs straight = Danger) and a **Squat** (Back bent + Knees bent = Safe).
+* **Context Awareness:** Only triggers alerts if the hands are detected below the knees (lifting context).
+* **Persistence (Debouncing):** A generic alarm is useless if it flickers. We use a rolling buffer logic that triggers a "Critical" alert only if the dangerous posture persists for **>1 second**.
+
+---
+
+## 📂 Project Structure
+
+The codebase is split into three independent modules for deployment.
 
 ```text
 IndustrialSafetyApp/
-├── run_app.py              # ENTRY POINT: The GUI Application
-├── train.py                # ENTRY POINT: The Model Trainer
-├── generate_data.py        # ENTRY POINT: Data Processor
+├── client/                 # [DEPLOY TO FACTORY PC]
+│   ├── run_app.py          # GUI Entry Point
+│   ├── ui/                 # PyQt Interface & Camera Threads
+│   └── utils/              # Edge Logic (Filtering, Normalization, Networking)
 │
-├── nn/                     # Neural Network Core
-│   ├── model.py            # ST-GCN Architecture Definition
-│   ├── dataset.py          # Custom PyTorch Dataset with Augmentation
-│   └── trainer.py          # Training Engine & Checkpointing
+├── server/                 # [DEPLOY TO CLOUD/GPU SERVER]
+│   ├── main.py             # FastAPI WebSocket Server
+│   ├── stgcn_model.pth     # Trained Model Weights
+│   └── nn/                 # Model Architecture Definition
 │
-├── ui/                     # User Interface
-│   ├── videoThread.py      # Multi-threaded Video Processing
-│   ├── style.py            # QSS Styling & Themes
-│   └── camUtils.py         # Camera Management
-│
-├── utils/                  # Shared Logic
-│   ├── poselogic.py        # The "Brain" (Inference Engine)
-│   ├── normalization.py    # The "Bridge" (Math transforms)
-│   ├── filter.py           # Signal Smoothing (OneEuro)
-│   └── argparser.py        # Configuration Management
-│
-└── Data/                   # Training Datasets (BVH/Video)
+└── development/            # [KEEP ON DEV MACHINE]
+    ├── Data/               # Raw Datasets (BVH/Video)
+    ├── train.py            # Training Pipeline
+    ├── generate_data.py    # Data Preprocessing
+    ├── utils/              # Tuners & Loggers
+    └── runs/               # Experiment Logs
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Python 3.10+
-- Webcam (or video file)
+### 1. Development (Training the Model)
 
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/praakul/industrial-safety-pose.git
-cd industrial-safety-pose
-```
-
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-*(Key libs: torch, opencv-python, mediapipe, pyqt6, numpy, optuna)*
-
----
-
-## 🛠️ Workflow: From Data to Deployment
-
-### Phase 1: Data Generation 🧬
-We convert raw videos into a normalized dataset suitable for AI training.
+If you want to retrain the model from scratch using the CarDA dataset:
 
 ```bash
+# Generate normalized dataset with velocity features
+cd development
 python generate_data.py
+
+# Train the model (Using optimized hyperparameters)
+python train.py --batch_size 64 --lr 0.008 --epochs 100
 ```
 
-- Scans `Data/` for videos.
-- Extracts skeletons using MediaPipe.
-- Calculates Ground Truth labels using Bio-Mechanical Geometry.
-- Saves `X_train.npy` (Features) and `y_train.npy` (Labels).
+### 2. Server Deployment (The Brain)
 
-### Phase 2: Training the Brain 
-We train the ST-GCN model on the generated data.
+Start the inference engine. This listens for incoming skeleton data via WebSockets.
 
 ```bash
-python train.py --epochs 50 --batch_size 32 --lr 0.1
+cd server
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-- Uses Weighted Loss to handle class imbalance.
-- Applies Physics-based Augmentation (Random rotation/jitter).
-- Saves the best model to `stgcn_posture_model.pth`.
+**Output:** ✅ Server: AI Model Loaded on CUDA
 
-### Phase 3: Deployment 
-Launch the real-time safety guard.
+### 3. Client Deployment (The Edge)
+
+Run the GUI on the laptop connected to the camera.
 
 ```bash
+cd client
 python run_app.py
 ```
 
-- Select your camera source.
-- Visual feedback:
-  - 🟢 **Green:** Safe Posture.
-  - 🟠 **Orange:** Warning (Bad Form).
-  - 🔴 **Red:** CRITICAL RISK (Unsafe Lift Detected).
+**Visual Feedback:**
+- 🟢 **Green:** Safe Posture.
+- 🟠 **Orange:** Warning (Bad Form).
+- 🔴 **Red:** CRITICAL RISK (Unsafe Lift Detected).
 
 ---
 
 ## 📊 Performance & Standards
 
-The system is calibrated against international ergonomic standards:
+The system is calibrated against EAWS (European Assembly Worksheet) and NIOSH lifting standards.
 
-| Zone | Angle (Flexion) | Bio-Mechanical Context | Alert Level |
-|------|----------------|------------------------|-------------|
-| **Neutral** | 0° - 20° | Natural standing/walking. | ✅ Safe |
-| **Mild Flexion** | 20° - 60° | Acceptable for short durations. | 🟡 Monitor |
-| **Severe Flexion** | > 60° | EAWS Class 4. High disc compression. | 🔴 Critical |
+| Risk Zone | Angle (Flexion) | Context | System Response |
+|-----------|----------------|---------|-----------------|
+| **Neutral** | 0° - 20° | Natural standing. | ✅ Safe |
+| **Mild** | 20° - 60° | Acceptable for short duration. | 🟡 Warning |
+| **Severe** | > 60° | High lumbar disc compression. | 🔴 Critical |
 
-### Current Model Metrics:
-- **Validation Accuracy:** ~92.2%
-- **Inference Speed:** ~30 FPS (CPU), ~90 FPS (GPU)
-- **Latency:** < 50ms (Real-time)
+### Model Metrics (Production v1.0):
+- **Validation Accuracy:** 88.24% (Robust, Regularized)
+  - *Note:* While 99% is possible on training data, 88% on validation represents true generalization to unseen workers.
+- **Architecture:** ST-GCN + Attention + Physics Augmentation.
+- **Latency:** < 50ms end-to-end via WebSocket.
 
 ---
 
 ## 🔮 Future Roadmap
 
-- [ ] **Multi-Person Tracking:** Upgrade from MediaPipe to RTMPose for crowd monitoring.
-- [ ] **Cloud Dashboard:** Send critical alert logs to a Flask/FastAPI server for safety managers.
-- [ ] **Edge Deployment:** Optimize model (ONNX/TensorRT) for NVIDIA Jetson devices.
+- [ ] **Multi-Person Tracking:** Upgrade Client logic to support RTMPose for tracking multiple workers simultaneously.
+- [ ] **Database Integration:** Connect Server to PostgreSQL to log incident timestamps and video snippets for safety audits.
+- [ ] **Edge Optimization:** Convert PyTorch model to TensorRT for deployment on NVIDIA Jetson Nano.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+This project is licensed under the MIT License.
 
 ---
 
 <p align="center">
-<i>Built with ❤️ for Worker Safety</i>
+<i>Engineered for Safety. Powered by AI.</i>
 </p>
