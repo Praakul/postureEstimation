@@ -1,4 +1,4 @@
-# 🏗️ Real-Time Posture Analysis for Industrial Weightlifting
+#  Real-Time Posture Analysis for Industrial Weightlifting
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)
@@ -8,7 +8,7 @@
 
 > **Protecting the workforce in the era of automation.**
 
-## 📖 Overview
+##  Overview
 
 In an industrial landscape where manual material handling remains a primary cause of musculoskeletal disorders (MSDs), standard safety protocols often fail to provide immediate, actionable feedback.
 
@@ -16,7 +16,7 @@ This project implements an **Industrial IoT (IIoT) Solution** for real-time ergo
 
 ---
 
-## 🧠 System Architecture & Logic
+##  System Architecture & Logic
 
 The system is decoupled into three distinct layers to ensure scalability, low latency, and robustness.
 
@@ -28,43 +28,17 @@ Running on factory floor hardware (Laptop/NUC/Jetson).
     * *Scale Invariance:* Torso length scaled to 1.0 units.
     * *View Invariance:* Skeleton rotated to align hips with the camera axis (canonical view).
 
-### 2. The Inference Server (The Brain) 🧠
+### 2. The Inference Server (The Brain) 
 Running on a central GPU server or Cloud instance.
 * **Model:** A **Spatial-Temporal Graph Convolutional Network (ST-GCN)**.
 * **Input:** It analyzes **6 Channels** of data (X, Y, Z Position + X, Y, Z Velocity) over a **50-frame sequence**.
 * **Attention:** Integrated **SE-Blocks** (Squeeze-and-Excitation) allow the model to focus on critical load-bearing joints (Spine/Hips) while ignoring peripheral noise.
 
-### 3. The Safety Logic (The Guard) 🛡️
+### 3. The Safety Logic (The Guard) 
 A hybrid decision engine combines AI predictions with deterministic heuristics:
 * **Bio-Mechanical Heuristic:** Differentiates between a **Stoop** (Back bent + Legs straight = Danger) and a **Squat** (Back bent + Knees bent = Safe).
 * **Context Awareness:** Only triggers alerts if the hands are detected below the knees (lifting context).
 * **Persistence (Debouncing):** A generic alarm is useless if it flickers. We use a rolling buffer logic that triggers a "Critical" alert only if the dangerous posture persists for **>1 second**.
-
----
-
-## 📂 Project Structure
-
-The codebase is split into three independent modules for deployment.
-
-```text
-IndustrialSafetyApp/
-├── client/                 # [DEPLOY TO FACTORY PC]
-│   ├── run_app.py          # GUI Entry Point
-│   ├── ui/                 # PyQt Interface & Camera Threads
-│   └── utils/              # Edge Logic (Filtering, Normalization, Networking)
-│
-├── server/                 # [DEPLOY TO CLOUD/GPU SERVER]
-│   ├── main.py             # FastAPI WebSocket Server
-│   ├── stgcn_model.pth     # Trained Model Weights
-│   └── nn/                 # Model Architecture Definition
-│
-└── development/            # [KEEP ON DEV MACHINE]
-    ├── Data/               # Raw Datasets (BVH/Video)
-    ├── train.py            # Training Pipeline
-    ├── generate_data.py    # Data Preprocessing
-    ├── utils/              # Tuners & Loggers
-    └── runs/               # Experiment Logs
-```
 
 ---
 
@@ -133,12 +107,6 @@ The system is calibrated against EAWS (European Assembly Worksheet) and NIOSH li
 - [ ] **Multi-Person Tracking:** Upgrade Client logic to support RTMPose for tracking multiple workers simultaneously.
 - [ ] **Database Integration:** Connect Server to PostgreSQL to log incident timestamps and video snippets for safety audits.
 - [ ] **Edge Optimization:** Convert PyTorch model to TensorRT for deployment on NVIDIA Jetson Nano.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
