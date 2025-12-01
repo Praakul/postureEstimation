@@ -2,9 +2,11 @@ import sys
 import os
 import json
 import torch
+import uvicorn
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
+import uvicorn # Make sure to import uvicorn
 
 # Fix path to allow importing from 'core' (assuming server/ is in project root)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -12,7 +14,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from nn.model import STGCN
 
 # --- CONFIG ---
-MODEL_PATH = "stgcn_posture_model.pth"
+MODEL_PATH = "server/stgcn_posture_model.pth"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Global Model Variable
@@ -79,4 +81,11 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"🔌 Client Disconnected: {websocket.client}")
     except Exception as e:
         print(f"❌ Error: {e}")
-        await websocket.close()
+        try:
+            await websocket.close()
+        except:
+            pass
+
+if __name__ == "__main__":
+    # This allows you to run the server with `python server/main.py`
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -1,98 +1,84 @@
-#style.py
-# This file holds the QSS (Qt Style Sheet) for the application.
-# It enforces a uniform blue color scheme and consistent font sizes.
-
-# --- UNIFORM FONT SIZES ---
-FONT_SIZE_BASE = "15px"
-FONT_SIZE_HEADER_SMALL = "17px"
-FONT_SIZE_HEADER_LARGE = "25px"
-
-# --- UNIFORM COLOR PALETTE ---
-COLOR_BACKGROUND = "#2C3E50"      # Dark Slate Blue
-COLOR_BACKGROUND_LIGHT = "#34495E"  # Medium Slate
-COLOR_PRIMARY_BLUE = "#3498DB"      # Bright Blue
-COLOR_PRIMARY_HOVER = "#5DADE2"      # Lighter Blue (Hover)
-COLOR_PRIMARY_DISABLED = "#566573"  # Muted Gray-Blue (Disabled)
-COLOR_TEXT = "#FFFFFF"            # White
-COLOR_TEXT_DISABLED = "#95A5A6"     # Gray (Disabled Text)
-COLOR_BLACK = "#000000"           # For video background
-
-STYLESHEET = f"""
-    /* Set default font for all widgets */
-    QWidget {{
-        background-color: {COLOR_BACKGROUND};
-        color: {COLOR_TEXT};
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: {FONT_SIZE_BASE};
-    }}
-
-    /* Main Title Label */
-    #TitleLabel {{
-        font-size: {FONT_SIZE_HEADER_LARGE};
-        font-weight: bold;
-    }}
-
-    /* Video feed titles */
-    #FeedTitleLabel {{
-        font-size: {FONT_SIZE_HEADER_SMALL};
-        font-weight: bold;
-    }}
-
-    /* Video feed display labels */
-    #VideoFeedLabel {{
-        background-color: {COLOR_BLACK};
-        border: 2px solid {COLOR_BACKGROUND_LIGHT};
-        border-radius: 8px;
-    }}
-
-    /* Control Bar Container */
-    #ControlBar {{
-        background-color: {COLOR_BACKGROUND_LIGHT};
-        border-radius: 10px;
-        padding: 10px;
-    }}
-
-    /* All Buttons & Dropdowns */
-    QPushButton, QComboBox {{
-        font-weight: bold;
-        color: {COLOR_TEXT};
-        background-color: {COLOR_PRIMARY_BLUE};
-        padding: 10px 20px;
-        border-radius: 8px;
-        min-height: 30px; /* Set a minimum height */
-    }}
-
-    QPushButton:hover, QComboBox:hover {{
-        background-color: {COLOR_PRIMARY_HOVER};
-    }}
-
-    QPushButton:disabled, QComboBox:disabled {{
-        background-color: {COLOR_PRIMARY_DISABLED};
-        color: {COLOR_TEXT_DISABLED};
-    }}
-
-    /* Dropdown specific */
-    QComboBox::drop-down {{ border: none; }}
-    QComboBox QAbstractItemView {{
-        background-color: {COLOR_BACKGROUND_LIGHT};
-        color: {COLOR_TEXT};
-        selection-background-color: {COLOR_PRIMARY_BLUE};
-    }}
-
-    /* Status Bar */
-    QStatusBar {{
-        font-size: {FONT_SIZE_BASE};
-        font-weight: bold;
-    }}
+STYLESHEET = """
+    QMainWindow {
+        background-color: #1e1e1e;
+        color: #ffffff;
+    }
+    QLabel { color: #eee; font-family: 'Segoe UI', Arial; }
     
-    /* Recording/Pause Indicators (Simple white text) */
-    #RecordingIndicator, #PauseLabel {{
+    #HeaderLabel {
         font-size: 24px;
         font-weight: bold;
-        color: {COLOR_TEXT};
-        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black bg */
-        border-radius: 5px;
+        color: #ddd;
         padding: 10px;
-    }}
-"""
+        border-bottom: 2px solid #333;
+    }
+    
+    #FeedFrame {
+        background-color: #252525;
+        border: 2px solid #444;
+        border-radius: 10px;
+    }
+    
+    #FeedTitle {
+        font-size: 16px;
+        font-weight: bold;
+        color: #aaa;
+        margin-bottom: 5px;
+    }
+    
+    /* Alert Bar Styles */
+    #AlertBar_Safe {
+        background-color: #154215; /* Dark Green */
+        color: #00FF00;
+        font-size: 28px;
+        font-weight: bold;
+        border-radius: 5px;
+        border: 1px solid #00FF00;
+    }
+    #AlertBar_Warning {
+        background-color: #58390b; /* Dark Orange */
+        color: #FFAA00;
+        font-size: 28px;
+        font-weight: bold;
+        border-radius: 5px;
+        border: 1px solid #FFAA00;
+    }
+    #AlertBar_Critical {
+        background-color: #4a0d0d; /* Dark Red */
+        color: #FF0000;
+        font-size: 32px; /* Bigger font */
+        font-weight: 900;
+        border-radius: 5px;
+        border: 2px solid #FF0000;
+        animation: blink 1s infinite; /* Advanced QT animation supported? Mostly no, but static looks good */
+    }
 
+    /* Buttons */
+    QPushButton {
+        background-color: #333;
+        border: 1px solid #555;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: bold;
+        color: white;
+    }
+    QPushButton:hover { background-color: #444; }
+    
+    #BtnStart { background-color: #0066cc; border: 1px solid #0088ff; }
+    #BtnStart:hover { background-color: #0077dd; }
+    
+    #BtnStop { background-color: #cc0000; border: 1px solid #ff4444; }
+    #BtnStop:hover { background-color: #dd0000; }
+    
+    #BtnExit { background-color: #222; border: 1px solid #666; color: #aaa; }
+    #BtnExit:hover { background-color: #333; color: white; }
+    
+    QComboBox {
+        background-color: #333;
+        color: white;
+        border: 1px solid #555;
+        padding: 8px;
+        border-radius: 5px;
+    }
+"""
