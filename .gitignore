@@ -5,6 +5,7 @@
 *.pt
 *.png
 *.jpeg
+*.pdf
 *.zip
 
 poseVideos/*
