@@ -20,7 +20,7 @@ This project implements an **Industrial IoT (IIoT) Solution** for real-time ergo
 
 The system is decoupled into three distinct layers to ensure scalability, low latency, and robustness.
 
-### 1. The Edge Client (The Eye) 👁️
+### 1. The Edge Client (The Eye) 
 Running on factory floor hardware (Laptop/NUC/Jetson).
 * **Vision:** Extracts a 33-point 3D skeleton using **MediaPipe Pose**.
 * **Signal Processing:** Raw keypoints are noisy. We apply a **OneEuroFilter** to smooth signals in real-time, removing high-frequency jitter while preserving low-latency responsiveness.
@@ -42,7 +42,7 @@ A hybrid decision engine combines AI predictions with deterministic heuristics:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Development (Training the Model)
 
@@ -66,7 +66,7 @@ cd server
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-**Output:** ✅ Server: AI Model Loaded on CUDA
+**Output:** Server: AI Model Loaded on CUDA
 
 ### 3. Client Deployment (The Edge)
 
@@ -90,9 +90,9 @@ The system is calibrated against EAWS (European Assembly Worksheet) and NIOSH li
 
 | Risk Zone | Angle (Flexion) | Context | System Response |
 |-----------|----------------|---------|-----------------|
-| **Neutral** | 0° - 20° | Natural standing. | ✅ Safe |
-| **Mild** | 20° - 60° | Acceptable for short duration. | 🟡 Warning |
-| **Severe** | > 60° | High lumbar disc compression. | 🔴 Critical |
+| **Neutral** | 0° - 20° | Natural standing. | Safe |
+| **Mild** | 20° - 60° | Acceptable for short duration. | Warning |
+| **Severe** | > 60° | High lumbar disc compression. | Critical |
 
 ### Model Metrics (Production v1.0):
 - **Validation Accuracy:** 88.24% (Robust, Regularized)
@@ -102,7 +102,7 @@ The system is calibrated against EAWS (European Assembly Worksheet) and NIOSH li
 
 ---
 
-## 🔮 Future Roadmap
+## Future Roadmap
 
 - [ ] **Multi-Person Tracking:** Upgrade Client logic to support RTMPose for tracking multiple workers simultaneously.
 - [ ] **Database Integration:** Connect Server to PostgreSQL to log incident timestamps and video snippets for safety audits.
