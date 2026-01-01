@@ -7,6 +7,8 @@
 *.jpeg
 *.pdf
 *.zip
+*.pth
+
 
 poseVideos/*
 !poseVideos/.gitkeep
@@ -14,3 +16,8 @@ __pycache__/
 pose-trainer/
 Data/
 runs/
+model/utils/pose_results.py
+model/utils/pose_results_two.py
+
+accuracy_plot.png!
+metrics_evolution.png!
