@@ -5,7 +5,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 class CameraWorker(QThread):
     """
-    Responsible ONLY for capturing frames from the hardware.
+    Responsible only for capturing frames from the hardware.
     """
     # Emits the raw numpy array (OpenCV format)
     frame_captured = pyqtSignal(np.ndarray)
@@ -19,7 +19,6 @@ class CameraWorker(QThread):
 
     def run(self):
         cap = cv2.VideoCapture(self.camera_index)
-        # Low latency setting
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         if not cap.isOpened():
@@ -32,11 +31,8 @@ class CameraWorker(QThread):
                 self.error_occurred.emit("Frame drop or camera disconnected")
                 break
             
-            # Emit the raw frame immediately. No processing.
+            #emit the raw frame immediately. No processing.
             self.frame_captured.emit(frame)
-            
-            # Self-throttling is handled by camera hardware FPS (usually 30)
-            # but we can add a tiny sleep if CPU usage spikes
             self.msleep(1)
 
         cap.release()

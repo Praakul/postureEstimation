@@ -6,7 +6,7 @@ import uvicorn
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
-import uvicorn # Make sure to import uvicorn
+import uvicorn 
 
 # Fix path to allow importing from 'core' (assuming server/ is in project root)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -59,7 +59,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"status": "Error", "code": -1}))
                 continue
 
-            # 2. Prepare Tensor
+            # 2. Prepare Tensor.
             # Input: (Batch, Channels, Time, Vertices) -> (1, 6, 50, 17)
             np_seq = np.array(skeleton_seq, dtype=np.float32)
             tensor = torch.tensor(np_seq).permute(2, 0, 1).unsqueeze(0).to(DEVICE)

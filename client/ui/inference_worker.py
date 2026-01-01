@@ -49,7 +49,6 @@ class InferenceWorker(QObject):
             self.logic.status = "Safe"
             self.logic.color = (0, 255, 0)
 
-        # --- Processing ---
         # Logic draws on 'processing_frame' and returns it
         annotated_frame = self.logic.process_frame(processing_frame)
 
@@ -60,7 +59,6 @@ class InferenceWorker(QObject):
             full_seq = np.concatenate((pos_seq, vel_seq), axis=2)
             self.client.send_skeleton(full_seq.tolist())
 
-        # --- Emission ---
         # Send Clean Raw Frame
         self.emit_image(raw_frame, self.update_raw_feed)
         
@@ -69,7 +67,6 @@ class InferenceWorker(QObject):
 
     def emit_image(self, cv_img, signal):
         """Helper to convert CV2 -> QImage"""
-        # Convert Color Space
         rgb = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb.shape
         bytes_per_line = ch * w
@@ -77,11 +74,11 @@ class InferenceWorker(QObject):
         # Create QImage from data
         temp_img = QImage(rgb.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
         
-        # MUST COPY() TO PERSIST IN MEMORY!
-        # Without this, 'rgb' is deleted by Python, and QImage points to garbage.
+        #MUST COPY() TO PERSIST IN MEMORY! 'rgb' is deleted by Python, and QImage points to garbage.
         final_img = temp_img.copy()
         
         signal.emit(final_img)
 
     def stop(self):
         self.client.close()
+        

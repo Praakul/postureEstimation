@@ -9,10 +9,10 @@ class NetworkClient:
         self.ws = None
         self.logger = logging.getLogger("NetworkClient")
         
-        # Thread-safe storage for the latest server response
+        #Thread-safe storage for the latest server response
         self._latest_prediction = 0 
         self._connected = False
-        self._lock = threading.Lock() # Prevents reading while writing
+        self._lock = threading.Lock() 
 
     def connect(self):
         """Starts the WebSocket connection in a background thread."""
@@ -24,7 +24,7 @@ class NetworkClient:
             on_close=self._on_close
         )
         
-        # Run network loop in a daemon thread so it doesn't block the app
+        #Run network loop in a daemon thread so it doesn't block the app
         wst = threading.Thread(target=self.ws.run_forever)
         wst.daemon = True
         wst.start()
@@ -55,7 +55,6 @@ class NetworkClient:
         if self.ws:
             self.ws.close()
 
-    # --- Internal Callbacks ---
     def _on_message(self, ws, message):
         try:
             data = json.loads(message)

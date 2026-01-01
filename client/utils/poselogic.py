@@ -8,7 +8,6 @@ from collections import deque
 from utils.normalization import normalize_skeleton
 from utils.filtering import OneEuroFilter
 
-# --- SAFETY LOGIC CLASS ---a
 class SafetyLogic:
     def __init__(self, fps=30):
         self.fps = fps
@@ -33,7 +32,6 @@ class SafetyLogic:
                 return "WARNING"
         return "SAFE"
 
-# --- MAIN POSE LOGIC ---
 class PoseLogic:
     def __init__(self):
         self.logger = logging.getLogger("PoseLogic")
@@ -94,8 +92,7 @@ class PoseLogic:
         return angle
 
     def process_frame(self, frame):
-        # 1. CRITICAL FIX: Create a separate copy for drawing immediately
-        # We will read from 'frame' but draw on 'annotated_img'
+
         annotated_img = frame.copy()
         
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -105,22 +102,22 @@ class PoseLogic:
             raw_lms = results.pose_landmarks.landmark
             lms = self.get_smoothed_landmarks(raw_lms)
             
-            # Context Logic
+            #Context Logic
             left_wrist_y = lms[15].y
             left_knee_y = lms[25].y
             is_lifting = left_wrist_y > left_knee_y
 
-            # Buffer Logic
+            #Buffer Logic
             skel = self.get_coco17_skeleton(lms)
             norm_skel = normalize_skeleton(skel)
             self.buffer.append(norm_skel)
             
-            # Geometric Logic
+            #geometric logic
             torso_angle = self.calculate_angle(lms[11], lms[23], lms[25])
             knee_angle = self.calculate_angle(lms[23], lms[25], lms[27])
             is_stooping = (torso_angle < 135) and (knee_angle > 150)
             
-            # Draw on the COPY, never the original
+            #draw on copy
             self.mp_drawing.draw_landmarks(
                 annotated_img, results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS,
                 self.mp_drawing_styles.get_default_pose_landmarks_style()

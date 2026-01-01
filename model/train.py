@@ -16,7 +16,7 @@ def main():
     set_seed(cfg.SEED)
     
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_name = f"{cfg.RUN_NAME}_{timestamp}" if cfg.RUN_NAME else f"train_{timestamp}"
+    run_name = f"{cfg.RUN_NAME}_{timestamp}" if cfg.RUN_NAME else f"train_{timestamp}"  
     run_dir = os.path.join(cfg.RUNS_DIR, run_name)
     
     logger = setup_logging(run_dir)

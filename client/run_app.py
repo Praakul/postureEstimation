@@ -2,6 +2,7 @@ import sys
 import os
 import cv2
 import time
+import numpy as np
 from datetime import datetime
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -10,7 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QPixmap, QImage, QColor, QPalette
 
-# Imports
+
 from ui.style import STYLESHEET
 from ui.camUtils import find_available_cameras
 from ui.videoThread import CameraWorker
@@ -144,12 +145,15 @@ class ModernWindow(QMainWindow):
         self.inference_worker = InferenceWorker()
         self.inference_worker.moveToThread(self.inference_thread)
         
-        # Connect
+        # Connect Signals
         self.camera_thread.frame_captured.connect(self.inference_worker.process_frame)
-        self.camera_thread.frame_captured.connect(self.handle_recording) 
         
         self.inference_worker.update_raw_feed.connect(self.set_raw)
+        
+        # RECORDING HOOK: Connect to the Analysis Feed
         self.inference_worker.update_model_feed.connect(self.set_model)
+        self.inference_worker.update_model_feed.connect(self.handle_recording_qimage)
+        
         self.inference_worker.server_status.connect(self.update_status_ui)
         
         self.camera_thread.finished.connect(self.camera_thread.deleteLater)
@@ -222,12 +226,37 @@ class ModernWindow(QMainWindow):
         self.model_label.setPixmap(QPixmap.fromImage(img).scaled(
             self.model_label.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
+    def qimage_to_cv2(self, qimage):
+        """Converts QImage back to OpenCV format (numpy array) for recording."""
+        # Convert to ARGB32 first to ensure standard byte order
+        qimage = qimage.convertToFormat(QImage.Format.Format_ARGB32)
+        
+        width = qimage.width()
+        height = qimage.height()
+        
+        # Get pointer to bits
+        ptr = qimage.bits()
+        # CRITICAL: Some PyQt versions require this check
+        if ptr is None: return None
+        
+        ptr.setsize(qimage.sizeInBytes())
+        
+        # Convert to numpy array
+        arr = np.array(ptr).reshape(height, width, 4)  # 4 channels (BGRA)
+        
+        # Convert BGRA (Qt) to BGR (OpenCV)
+        return cv2.cvtColor(arr, cv2.COLOR_BGRA2BGR)
+
     def toggle_recording(self):
         if not self.is_recording:
             os.makedirs("recordings", exist_ok=True)
             filename = f"recordings/session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
+            
+            # Initialize VideoWriter
+            # We use a standard size (640x480) for simplicity, or you can dynamically detect
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             self.video_writer = cv2.VideoWriter(filename, fourcc, 20.0, (640, 480))
+            
             self.is_recording = True
             self.btn_record.setText("⏹ STOP REC")
             self.btn_record.setStyleSheet("background-color: #FF0000; color: white;")
@@ -235,12 +264,18 @@ class ModernWindow(QMainWindow):
             self.is_recording = False
             if self.video_writer:
                 self.video_writer.release()
+                self.video_writer = None
             self.btn_record.setText("● REC")
             self.btn_record.setStyleSheet("") 
 
-    def handle_recording(self, frame):
+    def handle_recording_qimage(self, qimage):
         if self.is_recording and self.video_writer:
-            self.video_writer.write(frame)
+            frame = self.qimage_to_cv2(qimage)
+            if frame is not None:
+                # Resize to match the initialized writer size
+                if frame.shape[:2] != (480, 640):
+                    frame = cv2.resize(frame, (640, 480))
+                self.video_writer.write(frame)
 
     def closeEvent(self, event):
         self.stop_system()
